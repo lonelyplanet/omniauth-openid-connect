@@ -37,6 +37,26 @@ class OmniAuth::Strategies::OpenIDConnectTest < StrategyTestCase
     strategy.callback_phase
   end
 
+  def test_callback_phase_with_error
+    request.stubs(:params).returns({'error' => 'consent_required'})
+    strategy.stubs(:omniauth_origin).returns(' ')
+    request.stubs(:path_info).returns("")
+
+    strategy.unstub(:user_info)
+    access_token = stub('OpenIDConnect::AccessToken')
+    access_token.stubs(:access_token)
+    access_token.stubs(:refresh_token)
+    access_token.stubs(:expires_in)
+    access_token.stubs(:scope)
+
+    expected_redirect = /\?error\=consent_required/
+
+    strategy.expects(:redirect).with(regexp_matches(expected_redirect))
+
+    strategy.call!({"rack.session" => {}})
+    strategy.callback_phase
+  end
+
   def test_info
     info = strategy.info
     assert_equal user_info.name, info[:name]
