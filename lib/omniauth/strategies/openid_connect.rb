@@ -69,10 +69,18 @@ module OmniAuth
       end
 
       def callback_phase
-        client.redirect_uri = client_options.redirect_uri
-        client.authorization_code = authorization_code
-        access_token
-        super
+        if request_errors && request_errors.match(/consent_required/)
+          redirect @env["omniauth.origin"] + '?error=consent_required'
+        else
+          client.redirect_uri = client_options.redirect_uri
+          client.authorization_code = authorization_code
+          access_token
+          super
+        end
+      end
+
+      def request_errors
+        @request_errors ||= request.params["error"]
       end
 
       def authorization_code
